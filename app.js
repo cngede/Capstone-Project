@@ -1,15 +1,17 @@
 // Import dependencies
-const express = require('express')
+const bodyParser = require("body-parser");
+const express = require('express');
 const sqlite = require ('better-sqlite3');
-const port = 3000
-
+const port = 3000;
+const db = sqlite("patients.db");
 
 // initialize express App
 const app = express();
-exports.app = app;
+// app.use(bodyParser.urlencoded({extended : true}));
+// app.use(bodyParser.json());
 
-const {router} = require('./patients.js');
-app.use('/patients', router);
+// const {router} = require('./patients.js');
+// app.use('./patients', router);
 
 //const patientsRouter = require('./patients');
 //app.use('/users', patientsRouter);
@@ -23,12 +25,6 @@ app.use(express.json())
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
-
-//to post form data
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
@@ -54,28 +50,29 @@ app.listen(port, () => {
 
     exports.initAppointmentDb = initAppointmentDb;
 
-   
 
-  
-    //function to insert records to the database
+//function to insert records to the database
+function seedDb(name, phone, email, date, time, message) {
+  const checkForSeed = db.prepare(`select name, phone, email from patients where name = '${name}' and phone = ${phone} and email = '${email}'`).all();
 
-    
-function addToDb(name, phone, email, date, time, message){
-  let db = sqlite("patients.db");
-  const patientInfo = db.prepare (`insert into patients (name, phone, email, date, time, message) values (?, ?, ?, ?, ?, ?);`);
-  const patientInfoNew =  patientInfo.run(name, phone, email, date, time, message);
-  // console.log(patientInfoNew);
-  return patientInfoNew;
+  if (checkForSeed.length > 0) {
+    console.log('Seed data not added...');
+  } else {
+    console.log(`Adding seed data for patient: ${name}.`);
+    const patientInfo = db.prepare(`insert into patients (name, phone, email, date, time, message) values (?, ?, ?, ?, ?, ?);`);
+    const patientInfoNew =  patientInfo.run(name, phone, email, date, time, message);
+    console.log(`${name} seed data added.`);
   }
-
-
-  addToDb("John Doe", 5025442233, "johndoe@gmail.com", 11/20/2023, '12:00', "I need help with root canal issue" );
+}
+seedDb("John Doe", 5025442233, "johndoe@gmail.com", '11/20/2023', '12:00', "I need help with root canal issue" );
   
-  exports.addToDbDb = addToDb;
+async function addToDb(name, phone, email, date, time, message) {
+    console.log(`Adding data for patient: ${name}.`);
+    db.prepare(`insert into patients (name, phone, email, date, time, message) values (?, ?, ?, ?, ?, ?);`).run(name, phone, email, date, time, message);
+}
 
-  
+
  app.get('/patients', (req, res) =>{
-  let db = sqlite("patients.db");
   const start = db.prepare("select name, phone, email, date, time, message from patients");
   const infoFromDb = start.all();
   res.send(JSON.stringify(infoFromDb));
@@ -103,21 +100,29 @@ function addToDb(name, phone, email, date, time, message){
 
 app.use(express.json());
 app.post('/patients', (req, res) =>{
-  let db = sqlite("patientss.db");
-  let results = addToDb ("req.body.name, req.body.phone, req.body.email, req.body.date, req.body.time, req.body.message");
-  const infofromDb = start.all();
-  res.send(JSON.stringify(results));
-  })
-  
 
-  
-
+  addToDb(req.body.name, req.body.phone, req.body.email, req.body.date, req.body.time, req.body.message).then( () =>
+    res.status(201).json({
+        "status": 201,
+        "statusText": "OK",
+        "message": "Successfully added character",
+        "data": req.body
+    })
+  ).catch(() => {
+    console.log("Error adding __________");
+    
+    res.status(400).json({
+        "status": 400,
+        "statusText": `Bad Request`,
+        "message": "Unable to add character",
+    });
+  });
+})
 
 
 /*
 //create a new patient by submitting new patient info from the appointment form
 app.post("/patients/", (req, res, next) => {
-  let db = sqlite("patients.db");
   const errors=[]
   if (!req.body.name){
       errors.push("No name specified");
@@ -175,7 +180,7 @@ app.post("/patients/", (req, res, next) => {
 
 // Update patient records
 app.patch("/patients/:id", (req, res, next) => {
-  let db = sqlite("patients.db");
+
   let data = {
       name: req.body.name,
       phone: req.body.phone,
@@ -208,10 +213,8 @@ app.patch("/patients/:id", (req, res, next) => {
   });
 })
 
-
 //Delete a patient info from the db
 app.delete("/patients/:id", (req, res, next) => {
-  let db = sqlite("patients.db");
   db.run(
       'DELETE FROM patients WHERE id = ?',
       req.params.id,
