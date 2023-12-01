@@ -24,6 +24,7 @@ app.use(express.json())
 // Define routes
 app.get('/', (req, res) => {
   res.send('Hello World!')
+  
 })
 
 app.listen(port, () => {
