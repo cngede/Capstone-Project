@@ -137,63 +137,6 @@ app.post('/patients', (req, res) =>{
  
 
 
-/*
-
-//create a new patient by submitting new patient info from the appointment form
-app.post("/patients/", (req, res, next) => {
-  let db = sqlite("patients.db");
-  const errors=[]
-  if (!req.body.name){
-      errors.push("No name specified");
-  }
-
-  if (!req.body.phone){
-    errors.push("No phone specified");
-  }
-
-  if (!req.body.email){
-      errors.push("No email specified");
-  }
-  if (!req.body.date){
-    errors.push("No date specified");
-  }
-  if (!req.body.time){
-    errors.push("No time specified");
-  }
-  if (!req.body.message){
-    errors.push("No message specified");
-  }
-  if (errors.length){
-      res.status(400).json({"error":errors.join(",")});
-      return;
-  }
-  let data = {
-      name: req.body.name,
-      phone: req.body.phone,
-      email: req.body.email,
-      date: req.body.date,
-      time: req.body.time,
-      message: req.body.message
-      
-  }
-  const sql ='insert into patients (name, phone, email, date, time, message) values (?, ?, ?, ?, ?, ?);`);'
-  const params =[data.name, data.phone, data.email, data.date, data.time, data.message]
-  db.run(sql, params, function (err, result) {
-      if (err){
-          res.status(400).json({"error": err.message})
-          return;
-      }
-      res.json({
-          "message": "success",
-          "data": data,
-          "id" : this.lastID
-      })
-  });
-})
-
-
-*/
-
 
 
 
