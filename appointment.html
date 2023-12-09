@@ -51,7 +51,7 @@
         <section class="contact">
           <div class="contact-container">
           
-            <form class="contact-form" id="contact2" method="post" action="/appointment.html">
+            <form class="contact-form" id="contact2" method="post" action="/app.js">
               <div class="form-Intro">
                           
              
@@ -65,7 +65,7 @@
                   
                 </div>
                 <div class="form-input-wrapper">
-                  <input id="tel" name="tel" type="tel" placeholder="Phone" autocomplete="off" required />
+                  <input id="phone" name="" type="phone" placeholder="Phone" autocomplete="off" required />
                 
                 </div>
                 <div class="form-input-wrapper">
@@ -76,18 +76,18 @@
                   <input id="date" class="pickDate" type="date" placeholder="Date" name="date" required />
                   
                 </div>
-                <div class="form-input-wrapper"">
-                  <input id="date" class="pickTime" type="time" name="time" required/>
+                <div class="form-input-wrapper">
+                  <input id="time" class="pickTime" type="time" name="time" required/>
                  
                 </div>
                 <div class="contact-message">
-                <textarea name="message" cols="10" rows="4" placeholder="How can we help you?" required>
+                <textarea name="message" cols="10" id="message" rows="4" placeholder="How can we help you?" required>
                   How can we help you?
                 </textarea>
                 
                 </div>
                 <div class="submit-btn">
-                  <button class="form-submit-btn" type="submit" value="Submit Redemption">
+                  <button class="form-submit-btn" type="button" value="Submit Redemption" onclick="requestAppointment()">
                     <span class="flipper">
                       <span class="flipper-object flipper-vertical">
                         <span class="panel front">Request Appointment</span>
@@ -236,28 +236,27 @@
 
 <script>
 
-  var slideshows = document.querySelectorAll('[data-component="slideshow"]');
-  slideshows.forEach(initSlideShow);
-  
-  function initSlideShow(slideshow) {
-  
-    var slides = document.querySelectorAll(`#${slideshow.id} [role="list"] .slide`);
-  
-    var index = 0, time = 5000;
-    slides[index].classList.add('active');
-  
-    setInterval( () => {
-      slides[index].classList.remove('active');
-      
-      index++;
-      if (index === slides.length) index = 0;
-  
-      slides[index].classList.add('active');
-  
-    }, time);
+async function requestAppointment () {
+    console.log("Submitted successfully!");
+    // get the values from the form
+    const name = document.getElementById("name").value;
+    const phone = document.getElementById("phone").value;
+    const email = document.getElementById("email").value;
+    const date = document.getElementById("date").value;
+    const time = document.getElementById("time").value;
+    const message = document.getElementById("message").value;
+    let formData = {name: name, phone: phone, email: email, date: date, time: time, message: message}
+    fetch("http://localhost:3000/patients", {
+      method: "POST",
+      headers: {
+      "Content-Type": "application/json",
+      //"Access-Control-Allow-Origin": "*",
+      // 'Content-Type': 'application/x-www-form-urlencoded',
+    },
+      body: JSON.stringify(formData),
+    });
   }
-  
-  </script>
+</script>
 
 
 

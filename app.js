@@ -1,20 +1,27 @@
 // Import dependencies
-const bodyParser = require("body-parser");
-const express = require('express');
+const express = require('express')
 const sqlite = require ('better-sqlite3');
-const port = 3000;
-const db = sqlite("patients.db");
+const path = require("path");
+const port = 3000
+
 
 // initialize express App
 const app = express();
-// app.use(bodyParser.urlencoded({extended : true}));
-// app.use(bodyParser.json());
+exports.app = app;
 
-// const {router} = require('./patients.js');
-// app.use('./patients', router);
+
+// Server configuration
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use(express.static(path.join(__dirname, "public")));
+
+
+
+//const {router} = require('./patients.js');
+//app.use('/patients', router);
 
 //const patientsRouter = require('./patients');
-//app.use('/users', patientsRouter);
+//app.use('/patients', patientsRouter);
 
 
 // Configure middleware
@@ -23,8 +30,16 @@ app.use(express.json())
 
 // Define routes
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+  //res.send('Hello World!')
+  res.render("index");
 })
+
+//to post form data
+const bodyParser = require("body-parser");
+const { start } = require('repl');
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
@@ -33,14 +48,14 @@ app.listen(port, () => {
 
   function initAppointmentDb(){
     let newAppointmentDb = `CREATE TABLE IF NOT EXISTS "patients"(
-    "name" TEXT NOT NULL,
-    "phone" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "date" DATETIME NOT NULL,
-    "time" TIME NOT NULL,
-    "message" TEXT NOT NULL,
-    "id" INTEGER, PRIMARY KEY("id")
-    );`;
+        patients_id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        message TEXT NOT NULL
+          );`;
     let db = sqlite("patients.db");
     db.prepare(newAppointmentDb).run();
     }
@@ -50,29 +65,26 @@ app.listen(port, () => {
 
     exports.initAppointmentDb = initAppointmentDb;
 
+     
+    //function to insert records to the database
 
-//function to insert records to the database
-function seedDb(name, phone, email, date, time, message) {
-  const checkForSeed = db.prepare(`select name, phone, email from patients where name = '${name}' and phone = ${phone} and email = '${email}'`).all();
-
-  if (checkForSeed.length > 0) {
-    console.log('Seed data not added...');
-  } else {
-    console.log(`Adding seed data for patient: ${name}.`);
-    const patientInfo = db.prepare(`insert into patients (name, phone, email, date, time, message) values (?, ?, ?, ?, ?, ?);`);
-    const patientInfoNew =  patientInfo.run(name, phone, email, date, time, message);
-    console.log(`${name} seed data added.`);
+    
+function addToDb(name, phone, email, date, time, message){
+  let db = sqlite("patients.db");
+  const patientInfo = db.prepare (`insert into patients (name, phone, email, date, time, message) values (?, ?, ?, ?, ?, ?);`);
+  const patientInfoNew =  patientInfo.run(name, phone, email, date, time, message);
+  // console.log(patientInfoNew);
+  return patientInfoNew;
   }
-}
-seedDb("John Doe", 5025442233, "johndoe@gmail.com", '11/20/2023', '12:00', "I need help with root canal issue" );
+
+  addToDb("John Doe", "5025442233", "johndoe@gmail.com", "11/20/2023", "12:00", "I need help with root canal issue" );
   
-async function addToDb(name, phone, email, date, time, message) {
-    console.log(`Adding data for patient: ${name}.`);
-    db.prepare(`insert into patients (name, phone, email, date, time, message) values (?, ?, ?, ?, ?, ?);`).run(name, phone, email, date, time, message);
-}
+  
+  //exports.addToDbDb = addToDb;
 
-
+  
  app.get('/patients', (req, res) =>{
+  let db = sqlite("patients.db");
   const start = db.prepare("select name, phone, email, date, time, message from patients");
   const infoFromDb = start.all();
   res.send(JSON.stringify(infoFromDb));
@@ -80,6 +92,21 @@ async function addToDb(name, phone, email, date, time, message) {
   
 
  
+
+
+  app.use(function (req, res, next) {
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
+    // Request methods you wish to allow
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    // Pass to next layer of middleware
+    next();
+  });
   //get one patient from the db
   /*app.get("/patients/:id", (req, res, next) => {
     const sql = "select * from patients where id = ?"
@@ -98,31 +125,23 @@ async function addToDb(name, phone, email, date, time, message) {
 
 */
 
+
 app.use(express.json());
 app.post('/patients', (req, res) =>{
-
-  addToDb(req.body.name, req.body.phone, req.body.email, req.body.date, req.body.time, req.body.message).then( () =>
-    res.status(201).json({
-        "status": 201,
-        "statusText": "OK",
-        "message": "Successfully added character",
-        "data": req.body
-    })
-  ).catch(() => {
-    console.log("Error adding __________");
-    
-    res.status(400).json({
-        "status": 400,
-        "statusText": `Bad Request`,
-        "message": "Unable to add character",
-    });
-  });
-})
+  let db = sqlite("patients.db");
+  let results = addToDb (req.body.name, req.body.phone, req.body.email, req.body.date, req.body.time, req.body.message);
+  //const infofromDb = start.all();
+  res.send(JSON.stringify(results));
+  })
+  
+ 
 
 
 /*
+
 //create a new patient by submitting new patient info from the appointment form
 app.post("/patients/", (req, res, next) => {
+  let db = sqlite("patients.db");
   const errors=[]
   if (!req.body.name){
       errors.push("No name specified");
@@ -172,15 +191,15 @@ app.post("/patients/", (req, res, next) => {
   });
 })
 
-*/
 
+*/
 
 
 
 
 // Update patient records
 app.patch("/patients/:id", (req, res, next) => {
-
+  let db = sqlite("patients.db");
   let data = {
       name: req.body.name,
       phone: req.body.phone,
@@ -213,8 +232,10 @@ app.patch("/patients/:id", (req, res, next) => {
   });
 })
 
+
 //Delete a patient info from the db
 app.delete("/patients/:id", (req, res, next) => {
+  let db = sqlite("patients.db");
   db.run(
       'DELETE FROM patients WHERE id = ?',
       req.params.id,
